@@ -542,6 +542,11 @@ input.sm { font-size: 18px; height: 50px; padding: 6px 8px; }
 
   let staff = store.get("staff");
   if (!Array.isArray(staff) || !staff.length) staff = [{ id: "rayana", name: "Rayana", taux: 10 }, { id: "nisha", name: "Nisha", taux: 10 }];
+  // Monsieur (cuisinier) ajouté une seule fois à l'équipe ; Uzi peut le renommer ou le retirer ensuite
+  if (!store.get("add_monsieur")) {
+    if (!staff.some((s) => s.id === "monsieur")) staff.push({ id: "monsieur", name: "Monsieur", taux: 10 });
+    store.set("staff", staff); store.set("add_monsieur", 1);
+  }
   let hours = store.get("hours"); if (!Array.isArray(hours)) hours = [];
   let sel = store.get("sel"); if (!staff.some((s) => s.id === sel)) sel = staff[0].id;
   const today = dkey(new Date());
@@ -992,6 +997,11 @@ input.sm { font-size: 18px; height: 50px; padding: 6px 8px; }
     const list = [];
     const add = (staff, id, v) => { if (!v || typeof v !== "object") return; const h = Object.assign({}, v, { id }); if (SYNC_MODE === "team") h.staff = staff; if (h.date) list.push(h); };
     if (remote && typeof remote === "object") {
+      if (SYNC_MODE === "team") {                // nouvelle personne qui envoie ses heures → ajoutée à l'équipe
+        let added = false;
+        Object.keys(remote).forEach((s) => { if (!staff.some((x) => x.id === s)) { staff.push({ id: s, name: s.charAt(0).toUpperCase() + s.slice(1), taux: 10 }); added = true; } });
+        if (added) { saveStaff(); renderStaff(); renderTeam(); }
+      }
       if (SYNC_MODE === "team") Object.keys(remote).forEach((s) => { const m = remote[s]; if (m && typeof m === "object") Object.keys(m).forEach((id) => add(s, id, m[id])); });
       else Object.keys(remote).forEach((id) => add(null, id, remote[id]));
     }
